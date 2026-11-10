@@ -1,24 +1,38 @@
 import { TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 import { App } from './app';
+import { ReservaService } from './services/reserva.service';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-    })
-      .compileComponents();
+      providers: [
+        {
+          provide: ReservaService,
+          useValue: { listarReservas: () => of([]) },
+        },
+      ],
+    }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('debe crear la aplicación', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    fixture.detectChanges();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('debe mostrar el encabezado real de Estilo Zona', () => {
     const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, frontend-app');
+    fixture.detectChanges();
+    const content = fixture.nativeElement as HTMLElement;
+    expect(content.querySelector('h2')?.textContent).toContain('Estilo Zona');
+  });
+
+  it('debe mostrar el estado vacío cuando no hay reservas', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const content = fixture.nativeElement as HTMLElement;
+    expect(content.textContent).toContain('Cargando registros o la base de datos no devolvió datos');
   });
 });
