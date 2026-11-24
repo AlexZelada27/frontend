@@ -39,7 +39,7 @@
             <td style="padding: 14px 20px; font-weight: 600; color: #334155;">#{{ r.idReserva }}</td>
             <td style="padding: 14px 20px; color: #64748b;">{{ r.cliente?.nombre || 'N/A' }}</td>
             <td style="padding: 14px 20px; color: #64748b;">{{ r.empleado?.nombre || 'N/A' }}</td>
-            <td style="padding: 14px 20px; color: #64748b;">{{ r.sala?.nombre || 'N/A' }}</td>
+            <td style="padding: 14px 20px; color: #64748b;">{{ r.sala?.nombre || r.salaEstudio?.nombre || 'N/A' }}</td>
             <td style="padding: 14px 20px; color: #64748b;">{{ r.fechaReserva }}</td>
             <td style="padding: 14px 20px;">
               <span style="background-color: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
@@ -58,4 +58,4 @@
     </div>
   </div>
 
-</div>
+</div> 

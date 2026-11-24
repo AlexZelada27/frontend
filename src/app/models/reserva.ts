@@ -17,4 +17,5 @@ export interface Reserva {
   empleado?: Empleado;
   horarioFijo?: HorarioFijo;
   salaEstudio?: SalaEstudio;
+  sala?: SalaEstudio;
 }

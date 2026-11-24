@@ -1,9 +1,12 @@
-import { inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Reserva } from '../models/reserva';
 import { ReservaCreate } from '../models/reserva-create';
 
+@Injectable({
+  providedIn: 'root'
+})
 export class ReservaService {
   private http = inject(HttpClient);
   private url = 'http://localhost:8080/v1/Reserva';
@@ -27,4 +30,4 @@ export class ReservaService {
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
-}
+} 
