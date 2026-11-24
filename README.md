@@ -1,59 +1,31 @@
-# FrontendApp
+# Estilo Zona — Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+Interfaz del panel de reservas de Estilo Zona, desarrollada con Angular y TypeScript.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node.js y npm compatibles con la versión de Angular indicada en `package.json`.
+- Backend Spring Boot disponible para consultar datos reales.
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Ejecución local
 
 ```bash
-ng generate component component-name
+npm ci
+npm start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Abrir `http://localhost:4200`. Para generar una versión compilada: `npm run build`.
+
+## Módulos
+
+La aplicación incluye pantallas de clientes, empleados, reservas, salas, servicios, pagos y usuarios. Algunos módulos todavía están en desarrollo.
+
+Los servicios HTTP actuales usan `http://localhost:8080/v1`, por lo que el backend debe estar disponible en esa dirección o las URL de servicio deberán adaptarse al entorno.
+
+## Pruebas
 
 ```bash
-ng generate --help
+npm test
 ```
 
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Las pruebas unitarias no sustituyen las pruebas de integración con el backend. Antes de integrar cambios, ejecutar los comandos de compilación y pruebas y corregir los módulos incompletos si aparecen errores.
