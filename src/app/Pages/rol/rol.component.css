@@ -1,0 +1,58 @@
+.modulo-container {
+  max-width: 1000px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: Arial, sans-serif;
+}
+
+.modulo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.msg-ok {
+  color: #15803d;
+}
+
+.msg-error {
+  color: #b91c1c;
+}
+
+.form-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.form-fila input[type="text"] {
+  padding: 0.5rem;
+}
+
+.check-estado {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.acciones-tabla {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tabla-datos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-datos th,
+.tabla-datos td {
+  border: 1px solid #d1d5db;
+  padding: 0.5rem;
+  text-align: left;
+}

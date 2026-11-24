@@ -1,0 +1,41 @@
+<div class="modulo-container">
+  <div class="modulo-header">
+    <h2>Gestión de Bloqueos de Fecha</h2>
+    <a routerLink="/">← Volver al panel</a>
+  </div>
+
+  <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
+  <p *ngIf="error" class="msg-error">{{ error }}</p>
+
+  <form (ngSubmit)="guardar()" class="form-fila">
+    <input type="date" [(ngModel)]="form.fecha" name="fecha" required />
+    <input type="number" [(ngModel)]="form.idHorarioFijo" name="idHorarioFijo" placeholder="ID Horario Fijo (opcional)" min="1" />
+    <input type="text" [(ngModel)]="form.motivo" name="motivo" placeholder="Motivo del bloqueo" required />
+    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
+    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+  </form>
+
+  <table class="tabla-datos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>ID Horario Fijo</th>
+        <th>Motivo</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let b of bloqueos">
+        <td>{{ b.idBloqueo }}</td>
+        <td>{{ b.fecha }}</td>
+        <td>{{ b.idHorarioFijo ?? 'Todos' }}</td>
+        <td>{{ b.motivo }}</td>
+        <td class="acciones-tabla">
+          <button type="button" (click)="editar(b)">Editar</button>
+          <button type="button" *ngIf="b.idBloqueo" (click)="eliminar(b.idBloqueo)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

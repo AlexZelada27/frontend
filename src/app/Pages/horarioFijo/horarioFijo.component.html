@@ -1,0 +1,38 @@
+<div class="modulo-container">
+  <div class="modulo-header">
+    <h2>Gestión de Horarios Fijos</h2>
+    <a routerLink="/">← Volver al panel</a>
+  </div>
+
+  <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
+  <p *ngIf="error" class="msg-error">{{ error }}</p>
+
+  <form (ngSubmit)="guardar()" class="form-fila">
+    <input type="text" [(ngModel)]="form.horario" name="horario" placeholder="Hora inicio (ej. 08:00)" required />
+    <input type="text" [(ngModel)]="form.horaFin" name="horaFin" placeholder="Hora fin (ej. 10:00)" required />
+    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
+    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+  </form>
+
+  <table class="tabla-datos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Horario Inicio</th>
+        <th>Hora Fin</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let h of horarios">
+        <td>{{ h.idHorarioFijo }}</td>
+        <td>{{ h.horario }}</td>
+        <td>{{ h.horaFin }}</td>
+        <td class="acciones-tabla">
+          <button type="button" (click)="editar(h)">Editar</button>
+          <button type="button" *ngIf="h.idHorarioFijo" (click)="eliminar(h.idHorarioFijo)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

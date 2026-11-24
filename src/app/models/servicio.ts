@@ -1,17 +1,9 @@
-export interface TipoServicio {
-  idTipoServicio: number;
-  nombre: string;
-}
+import { TipoServicio } from './tipo-servicio';
 
 export interface Servicio {
-  idServicio: number;
-  tipoServicio: TipoServicio;
+  idServicio?: number;
+  idTipoServicio?: number;
   nombre: string;
   precio: number;
-}
-
-export interface ReservaServicio {
-  idReservaServicio: number;
-  servicio: Servicio;
-  precio: number;
+  tipoServicio?: TipoServicio;
 }

@@ -1,5 +1,5 @@
 export interface HorarioFijo {
-  idHorarioFijo: number;
-  horaInicio: string;
+  idHorarioFijo?: number;
+  horario: string;
   horaFin: string;
 }

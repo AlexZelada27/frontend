@@ -1,0 +1,52 @@
+<div class="modulo-container">
+  <div class="modulo-header">
+    <h2>Gestión de Usuarios</h2>
+    <a routerLink="/">← Volver al panel</a>
+  </div>
+
+  <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
+  <p *ngIf="error" class="msg-error">{{ error }}</p>
+
+  <form (ngSubmit)="guardar()" class="form-grid">
+    <input type="text" [(ngModel)]="form.nombres" name="nombres" placeholder="Nombres" required />
+    <input type="text" [(ngModel)]="form.apellidos" name="apellidos" placeholder="Apellidos" required />
+    <input type="email" [(ngModel)]="form.correo" name="correo" placeholder="Correo" required />
+    <input type="text" [(ngModel)]="form.telefono" name="telefono" placeholder="Teléfono" required />
+    <input type="password" [(ngModel)]="form.password" name="password" placeholder="Contraseña" />
+    <input type="number" [(ngModel)]="form.idRol" name="idRol" placeholder="ID Rol" />
+    <input type="text" [(ngModel)]="form.estado" name="estado" placeholder="Estado (ej. ACTIVO)" required />
+
+    <div class="acciones-form">
+      <button type="submit">{{ editandoId ? 'Actualizar' : 'Crear' }}</button>
+      <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+    </div>
+  </form>
+
+  <table class="tabla-datos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombres</th>
+        <th>Apellidos</th>
+        <th>Correo</th>
+        <th>Teléfono</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let u of usuarios">
+        <td>{{ u.idUsuario }}</td>
+        <td>{{ u.nombres }}</td>
+        <td>{{ u.apellidos }}</td>
+        <td>{{ u.correo }}</td>
+        <td>{{ u.telefono }}</td>
+        <td>{{ u.estado }}</td>
+        <td class="acciones-tabla">
+          <button type="button" (click)="editar(u)">Editar</button>
+          <button type="button" *ngIf="u.idUsuario" (click)="eliminar(u.idUsuario)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

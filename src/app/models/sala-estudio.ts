@@ -1,5 +1,5 @@
 export interface SalaEstudio {
-  idSala: number;
+  idSala?: number;
   nombre: string;
   direccion: string;
   descripcion: string;

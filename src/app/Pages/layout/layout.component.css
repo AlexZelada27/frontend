@@ -1,0 +1,47 @@
+.layout-container {
+  max-width: 1050px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  font-family: Arial, sans-serif;
+}
+
+.layout-header h1 {
+  margin: 0 0 0.25rem 0;
+}
+
+.layout-header p {
+  margin: 0;
+  color: #4b5563;
+}
+
+.grid-modulos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.card-modulo {
+  display: block;
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.card-modulo:hover {
+  border-color: #111827;
+  transform: translateY(-2px);
+}
+
+.card-modulo h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.card-modulo p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4b5563;
+}

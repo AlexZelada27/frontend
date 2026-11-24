@@ -1,0 +1,47 @@
+<div class="modulo-container">
+  <div class="modulo-header">
+    <h2>Gestión de Salas de Estudio</h2>
+    <a routerLink="/">← Volver al panel</a>
+  </div>
+
+  <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
+  <p *ngIf="error" class="msg-error">{{ error }}</p>
+
+  <form (ngSubmit)="guardar()" class="form-grid">
+    <input type="text" [(ngModel)]="form.nombre" name="nombre" placeholder="Nombre de sala" required />
+    <input type="text" [(ngModel)]="form.direccion" name="direccion" placeholder="Dirección" required />
+    <input type="text" [(ngModel)]="form.descripcion" name="descripcion" placeholder="Descripción" required />
+    <input type="number" [(ngModel)]="form.capacidad" name="capacidad" placeholder="Capacidad" required min="1" />
+
+    <div class="acciones-form">
+      <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
+      <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+    </div>
+  </form>
+
+  <table class="tabla-datos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Dirección</th>
+        <th>Descripción</th>
+        <th>Capacidad</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let s of salas">
+        <td>{{ s.idSala }}</td>
+        <td>{{ s.nombre }}</td>
+        <td>{{ s.direccion }}</td>
+        <td>{{ s.descripcion }}</td>
+        <td>{{ s.capacidad }}</td>
+        <td class="acciones-tabla">
+          <button type="button" (click)="editar(s)">Editar</button>
+          <button type="button" *ngIf="s.idSala" (click)="eliminar(s.idSala)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

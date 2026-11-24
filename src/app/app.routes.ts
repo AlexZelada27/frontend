@@ -3,16 +3,17 @@ import { LayoutComponent } from './Pages/layout/layout.component';
 import { ClienteComponent } from './Pages/cliente/cliente.component';
 import { EmpleadoComponent } from './Pages/empleado/empleado.component';
 import { ReservaComponent } from './Pages/reserva/reserva.component';
-import { SalaEstudioComponent } from './Pages/sala-estudios/sala-estudio.component'; // Ajusta según el nombre de tu archivo
+import { SalaEstudioComponent } from './Pages/sala-estudio/sala-estudio.component';
 import { ServicioComponent } from './Pages/servicio/servicio.component';
 import { PagoComponent } from './Pages/pago/pago.component';
 import { UsuarioComponent } from './Pages/usuario/usuario.component';
+import { HorarioFijoComponent } from './Pages/horarioFijo/horarioFijo.component';
+import { BloqueoFechaComponent } from './Pages/bloqueo-fecha/bloqueo-fecha.component';
+import { RolComponent } from './Pages/rol/rol.component';
+import { TipoServicioComponent } from './Pages/tipo-servicio/tipo-servicio.component';
 
 export const routes: Routes = [
-  // Ruta principal (Panel de control con los botones)
   { path: '', component: LayoutComponent },
-  
-  // Módulos del sistema
   { path: 'clientes', component: ClienteComponent },
   { path: 'empleados', component: EmpleadoComponent },
   { path: 'reservas', component: ReservaComponent },
@@ -20,7 +21,9 @@ export const routes: Routes = [
   { path: 'servicios', component: ServicioComponent },
   { path: 'pagos', component: PagoComponent },
   { path: 'usuarios', component: UsuarioComponent },
-
-  // Redirección por defecto si la ruta no existe
+  { path: 'horarios', component: HorarioFijoComponent },
+  { path: 'bloqueos', component: BloqueoFechaComponent },
+  { path: 'roles', component: RolComponent },
+  { path: 'tipos-servicio', component: TipoServicioComponent },
   { path: '**', redirectTo: '' }
 ];

@@ -1,0 +1,51 @@
+<div class="modulo-container">
+  <div class="modulo-header">
+    <h2>Gestión de Reservas</h2>
+    <a routerLink="/">← Volver al panel</a>
+  </div>
+
+  <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
+  <p *ngIf="error" class="msg-error">{{ error }}</p>
+
+  <form (ngSubmit)="guardar()" class="form-grid">
+    <input type="number" [(ngModel)]="form.idCliente" name="idCliente" placeholder="ID Cliente" required min="1" />
+    <input type="number" [(ngModel)]="form.idEmpleado" name="idEmpleado" placeholder="ID Empleado" required min="1" />
+    <input type="number" [(ngModel)]="form.idHorarioFijo" name="idHorarioFijo" placeholder="ID Horario Fijo" required min="1" />
+    <input type="number" [(ngModel)]="form.idSala" name="idSala" placeholder="ID Sala" required min="1" />
+    <input type="date" [(ngModel)]="form.fechaReserva" name="fechaReserva" required />
+    <input type="text" [(ngModel)]="form.estado" name="estado" placeholder="Estado (CONFIRMADA, PENDIENTE...)" required />
+    <input type="text" [(ngModel)]="form.metodoPago" name="metodoPago" placeholder="Método de pago (EFECTIVO, YAPE...)" required />
+    <input type="text" [(ngModel)]="serviciosTexto" name="serviciosTexto" placeholder="IDs Servicios (ej. 1, 2)" />
+
+    <div class="acciones-form">
+      <button type="submit">{{ editandoId ? 'Actualizar Reserva' : 'Registrar Reserva' }}</button>
+      <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+    </div>
+  </form>
+
+  <table class="tabla-datos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Fecha</th>
+        <th>Estado</th>
+        <th>Cliente</th>
+        <th>Sala</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of reservas">
+        <td>{{ r.idReserva }}</td>
+        <td>{{ r.fechaReserva }}</td>
+        <td>{{ r.estado }}</td>
+        <td>{{ r.cliente?.nombre ?? r.idCliente }}</td>
+        <td>{{ r.salaEstudio?.nombre ?? r.idSala }}</td>
+        <td class="acciones-tabla">
+          <button type="button" (click)="editar(r)">Editar</button>
+          <button type="button" *ngIf="r.idReserva" (click)="eliminar(r.idReserva)">Eliminar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
