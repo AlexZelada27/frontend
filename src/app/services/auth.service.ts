@@ -168,4 +168,46 @@ export class AuthService {
     const rol = (this.sesion()?.rolNombre || '').toUpperCase();
     return rol.includes('CLIENTE');
   }
-}
+
+  puedeAccederModulo(modulo: string): boolean {
+    const rol = (this.sesion()?.rolNombre || '').toUpperCase();
+    if (!rol) return false;
+    if (rol.includes('ADMIN')) return true;
+
+    const clave = (modulo || '').toLowerCase().trim();
+
+    if (rol.includes('EMPLEADO')) {
+      return [
+        'reservas',
+        'reserva',
+        'clientes',
+        'cliente',
+        'horarios',
+        'horarios-fijos',
+        'horariofijo',
+        'bloqueos',
+        'bloqueo-fecha',
+        'bloqueofecha',
+        'pagos',
+        'pago',
+        'salas',
+        'salas-estudio',
+        'salaestudio'
+      ].includes(clave);
+    }
+
+    if (rol.includes('CLIENTE')) {
+      return clave === 'reservas' || clave === 'reserva';
+    }
+
+    return false;
+  }
+
+  puedeEditarReserva(): boolean {
+    return this.esAdmin() || this.esEmpleado();
+  }
+
+  puedeEliminarReserva(): boolean {
+    return this.esAdmin() || this.esEmpleado();
+  }
+} 

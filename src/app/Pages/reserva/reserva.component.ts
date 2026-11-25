@@ -1,7 +1,8 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-reserva',
@@ -12,6 +13,7 @@ import { RouterLink } from '@angular/router';
 })
 export class ReservaComponent implements OnInit {
   private readonly baseUrl = 'http://localhost:8080/v1';
+  auth = inject(AuthService);
 
   reservas: any[] = [];
   clientes: any[] = [];
@@ -48,6 +50,9 @@ export class ReservaComponent implements OnInit {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
+    if (this.auth.esCliente() && this.auth.sesion()?.nombreCompleto) {
+      this.filtroCliente = this.auth.sesion()!.nombreCompleto;
+    }
     this.cargarTodo();
   }
 
@@ -274,6 +279,12 @@ export class ReservaComponent implements OnInit {
     this.error = '';
     this.mensaje = '';
 
+    if (this.editandoId && !this.auth.puedeEditarReserva()) {
+      this.error = 'No tienes permiso para editar reservas.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     const hoyStr = this.obtenerFechaHoyLocal();
     if (!this.editandoId && (!this.form.fechaReserva || this.form.fechaReserva < hoyStr)) {
       this.error = `No se puede registrar una reserva con fecha pasada. Selecciona desde ${hoyStr} en adelante.`;
@@ -301,7 +312,7 @@ export class ReservaComponent implements OnInit {
 
     try {
       const montoTotal = this.calcularMontoTotal();
-      const fueEdicion = !!this.editandoId;
+      const fueEdicion = !!this.editandoId && this.auth.puedeEditarReserva();
       const estadoBase = fueEdicion ? this.form.estado : 'CONFIRMADO';
       const estadoFinal = this.resolverEstadoPorFecha(this.form.fechaReserva, estadoBase);
 
@@ -309,7 +320,6 @@ export class ReservaComponent implements OnInit {
         ? this.reservas.find((item) => Number(item.idReserva ?? item.id_reserva) === Number(this.editandoId))
         : null;
 
-      // 1. Crear o actualizar Pago
       let idPagoFinal: number | null =
         reservaActual?.idPago ??
         reservaActual?.id_pago ??
@@ -337,7 +347,6 @@ export class ReservaComponent implements OnInit {
         // Continúa aunque /Pago no aplique aparte o tarde
       }
 
-      // 2. Guardar o actualizar Reserva
       const reservaPayload: any = {
         ...(fueEdicion ? { idReserva: Number(this.editandoId) } : {}),
         idCliente: Number(this.form.idCliente),
@@ -383,7 +392,6 @@ export class ReservaComponent implements OnInit {
         reservaGuardada?.idReserva ?? reservaGuardada?.id_reserva ?? this.editandoId
       );
 
-      // 3. Sincronizar servicios en ReservaServicio
       if (!isNaN(idReservaFinal) && idReservaFinal > 0) {
         if (fueEdicion) {
           const relacionesExistentes = this.reservaServicios.filter((rs) => {
@@ -445,6 +453,12 @@ export class ReservaComponent implements OnInit {
   }
 
   editar(r: any): void {
+    if (!this.auth.puedeEditarReserva()) {
+      this.error = 'No tienes permiso para editar reservas.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.editandoId = r.idReserva ?? r.id_reserva ?? null;
     const fecha = r.fechaReserva ?? r.fecha_reserva ?? '';
     this.form = {
@@ -469,6 +483,12 @@ export class ReservaComponent implements OnInit {
   }
 
   async eliminar(id: number): Promise<void> {
+    if (!this.auth.puedeEliminarReserva()) {
+      this.error = 'No tienes permiso para eliminar reservas.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.error = '';
     this.mensaje = '';
     try {
@@ -504,6 +524,7 @@ export class ReservaComponent implements OnInit {
         r.clienteNombre ||
         r.nombreCliente ||
         r.cliente?.nombre ||
+        ((r.cliente?.nombres || '') + ' ' + (r.cliente?.apellidos || '')).trim() ||
         ''
       ).toLowerCase();
       const id = String(r.idCliente ?? r.id_cliente ?? r.cliente?.idCliente ?? '');

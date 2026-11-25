@@ -1,41 +1,91 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Bloqueos de Fecha</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
-  <form (ngSubmit)="guardar()" class="form-fila">
-    <input type="date" [(ngModel)]="form.fecha" name="fecha" required />
-    <input type="number" [(ngModel)]="form.idHorarioFijo" name="idHorarioFijo" placeholder="ID Horario Fijo (opcional)" min="1" />
-    <input type="text" [(ngModel)]="form.motivo" name="motivo" placeholder="Motivo del bloqueo" required />
-    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
-    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+  <form (ngSubmit)="guardar()" class="form-bloqueo">
+    <div class="form-fila">
+      <input
+        type="date"
+        [(ngModel)]="form.fecha"
+        name="fecha"
+        required
+      />
+
+      <input
+        type="text"
+        [(ngModel)]="form.motivo"
+        name="motivo"
+        placeholder="Motivo del bloqueo"
+        required
+      />
+
+      <button type="submit" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Registrar') }}
+      </button>
+      <button
+        type="button"
+        *ngIf="(editandoId || horariosSeleccionados.length > 0) && !guardando"
+        (click)="limpiar()"
+      >
+        Limpiar
+      </button>
+    </div>
+
+    <div class="horarios-checks" *ngIf="horarios.length > 0">
+      <span class="horarios-titulo">
+        Horarios a bloquear ({{ horariosSeleccionados.length ? horariosSeleccionados.length + ' seleccionados' : 'Todo el día' }}):
+      </span>
+
+      <div class="checks-lista">
+        <label *ngFor="let h of horarios" class="check-item">
+          <input
+            type="checkbox"
+            [checked]="estaSeleccionado(obtenerIdHorario(h))"
+            (change)="toggleHorario(obtenerIdHorario(h), $event)"
+          />
+          <span>{{ formatearHorario(h) }}</span>
+        </label>
+      </div>
+    </div>
   </form>
 
-  <table class="tabla-datos">
+  <table class="tabla-datos" *ngIf="bloqueos.length > 0">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Fecha</th>
-        <th>ID Horario Fijo</th>
+        <th>Horario</th>
         <th>Motivo</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let b of bloqueos">
-        <td>{{ b.idBloqueo }}</td>
         <td>{{ b.fecha }}</td>
-        <td>{{ b.idHorarioFijo ?? 'Todos' }}</td>
+        <td>{{ obtenerEtiquetaHorario(b) }}</td>
         <td>{{ b.motivo }}</td>
         <td class="acciones-tabla">
-          <button type="button" (click)="editar(b)">Editar</button>
-          <button type="button" *ngIf="b.idBloqueo" (click)="eliminar(b.idBloqueo)">Eliminar</button>
+          <button type="button" [disabled]="guardando" (click)="editar(b)">
+            Editar
+          </button>
+          <button
+            type="button"
+            *ngIf="obtenerIdBloqueo(b) !== null"
+            [disabled]="guardando"
+            (click)="eliminar(obtenerIdBloqueo(b)!)"
+          >
+            Eliminar
+          </button>
         </td>
       </tr>
     </tbody>
   </table>
+
+  <p *ngIf="bloqueos.length === 0 && !error">
+    No hay bloqueos de fecha registrados.
+  </p>
 </div>

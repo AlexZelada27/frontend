@@ -1,8 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { Usuario } from '../../models/usuario';
 import { Rol } from '../../models/rol';
 import { AuthService } from '../../services/auth.service';
@@ -17,10 +18,10 @@ import { AuthService } from '../../services/auth.service';
 export class UsuarioComponent implements OnInit {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
   auth = inject(AuthService);
 
   private usuariosUrl = 'http://localhost:8080/v1/Usuario';
-  private rolesUrl = 'http://localhost:8080/v1/Rol';
 
   modo: 'login' | 'registro' | 'gestion' = 'login';
 
@@ -30,15 +31,21 @@ export class UsuarioComponent implements OnInit {
   usuarios: Usuario[] = [];
   roles: Rol[] = [];
   editandoId: number | null = null;
+  cargando = false;
   mensaje = '';
   error = '';
   form: Usuario = this.nuevoForm();
 
   ngOnInit(): void {
-    this.cargarRoles();
+    this.cargarInicial();
+  }
+
+  private async cargarInicial(): Promise<void> {
+    await this.cargarRoles();
     if (this.auth.esAdmin()) {
-      this.listar();
+      await this.listar();
     }
+    this.cdr.detectChanges();
   }
 
   nuevoForm(): Usuario {
@@ -53,54 +60,95 @@ export class UsuarioComponent implements OnInit {
     };
   }
 
-  private getIdRolUsuario(u: any): number | undefined {
-    return u?.idRol ?? u?.id_rol ?? u?.rol?.idRol ?? u?.rol?.id_rol;
+  cambiarModo(nuevoModo: 'login' | 'registro' | 'gestion'): void {
+    if (nuevoModo === 'gestion' && !this.auth.esAdmin()) {
+      this.error = 'Solo un administrador puede administrar usuarios.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.modo = nuevoModo;
+    this.mensaje = '';
+    this.error = '';
+
+    if (nuevoModo === 'registro') {
+      this.editandoId = null;
+      this.limpiar();
+    } else if (nuevoModo === 'gestion') {
+      this.limpiar();
+      void this.listar();
+    }
+
+    this.cdr.detectChanges();
   }
 
-  private getIdRolCatalogo(r: any): number | undefined {
-    return r?.idRol ?? r?.id_rol;
+  limpiarLogin(): void {
+    this.loginCorreo = '';
+    this.loginPassword = '';
+    this.mensaje = '';
+    this.error = '';
+    this.cdr.detectChanges();
+  }
+
+  obtenerIdUsuario(u: any): number | null {
+    const id = u?.idUsuario ?? u?.id_usuario ?? u?.id ?? null;
+    if (id == null) return null;
+    const num = Number(id);
+    return isNaN(num) ? null : num;
+  }
+
+  private getIdRolUsuario(u: any): number | undefined {
+    const id = u?.idRol ?? u?.id_rol ?? u?.rol?.idRol ?? u?.rol?.id_rol ?? u?.rol?.id;
+    if (id === undefined || id === null || id === '') return undefined;
+    const num = Number(id);
+    return isNaN(num) ? undefined : num;
+  }
+
+  obtenerIdRolCatalogo(r: any): number | undefined {
+    const id = r?.idRol ?? r?.id_rol ?? r?.id;
+    if (id === undefined || id === null || id === '') return undefined;
+    const num = Number(id);
+    return isNaN(num) ? undefined : num;
   }
 
   private normalizarRoles(data: any[]): Rol[] {
     return (data || []).map((r) => ({
       ...r,
-      idRol: this.getIdRolCatalogo(r),
-      nombre: r?.nombre ?? r?.nombreRol ?? r?.rolNombre ?? '',
-      descripcion: r?.descripcion ?? '',
+      idRol: this.obtenerIdRolCatalogo(r),
+      nombre: (r?.nombre ?? r?.nombreRol ?? r?.rolNombre ?? '').toString().trim(),
+      descripcion: (r?.descripcion ?? '').toString().trim(),
       estado: r?.estado
     }));
   }
 
-  cargarRoles(): void {
-    this.auth.obtenerRoles().subscribe({
-      next: (data) => {
-        this.roles = this.normalizarRoles(data);
+  async cargarRoles(): Promise<void> {
+    try {
+      const data = await firstValueFrom(this.auth.obtenerRoles());
+      this.roles = this.normalizarRoles(data);
 
-        if (this.roles.length > 0 && !this.form.idRol) {
-          const rolCliente = this.roles.find((r) => (r.nombre || '').toUpperCase() === 'CLIENTE');
-          this.form.idRol = rolCliente?.idRol ?? this.roles[0].idRol;
-        }
-      },
-      error: () => {
-        this.roles = [];
+      if (this.roles.length > 0 && this.form.idRol === undefined) {
+        const rolCliente = this.roles.find((r) => (r.nombre || '').toUpperCase() === 'CLIENTE');
+        this.form.idRol = this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.roles[0]);
       }
-    });
-  }
-
-  listar(): void {
-    if (!this.auth.esAdmin()) {
-      return;
+    } catch {
+      this.roles = [];
     }
-    this.error = '';
-    this.auth.obtenerUsuariosRegistrados().subscribe({
-      next: (data) => (this.usuarios = data || []),
-      error: () => {
-        this.error = 'No se pudieron cargar los usuarios registrados.';
-      }
-    });
   }
 
-  iniciarSesion(): void {
+  async listar(): Promise<void> {
+    if (!this.auth.esAdmin()) return;
+    this.error = '';
+    try {
+      const data = await firstValueFrom(this.auth.obtenerUsuariosRegistrados());
+      this.usuarios = Array.isArray(data) ? [...data] : [];
+    } catch {
+      this.error = 'No se pudieron cargar los usuarios registrados.';
+    } finally {
+      this.cdr.detectChanges();
+    }
+  }
+
+  async iniciarSesion(): Promise<void> {
     this.mensaje = '';
     this.error = '';
 
@@ -109,133 +157,189 @@ export class UsuarioComponent implements OnInit {
 
     if (!correoBuscado || !passIngresada) {
       this.error = 'Ingresa tu correo y contraseña.';
+      this.cdr.detectChanges();
       return;
     }
 
-    this.auth.obtenerUsuariosRegistrados().subscribe({
-      next: (lista) => {
-        const usuariosLista = lista || [];
-        const encontrado = usuariosLista.find(
-          (u) => (u.correo || '').trim().toLowerCase() === correoBuscado
-        );
+    this.cargando = true;
+    this.cdr.detectChanges();
 
-        if (!encontrado) {
-          this.error = 'No existe un usuario registrado con ese correo.';
-          return;
-        }
+    try {
+      const lista = await firstValueFrom(this.auth.obtenerUsuariosRegistrados());
+      const usuariosLista = lista || [];
+      const encontrado = usuariosLista.find(
+        (u) => (u.correo || '').trim().toLowerCase() === correoBuscado
+      );
 
-        const estadoOk = (encontrado.estado || 'ACTIVO').toUpperCase() !== 'INACTIVO';
-        if (!estadoOk) {
-          this.error = 'Este usuario se encuentra inactivo.';
-          return;
-        }
-
-        const passBackend = (encontrado as any).password ?? (encontrado as any).contrasena;
-        if (passBackend && passBackend !== passIngresada) {
-          this.error = 'Contraseña incorrecta.';
-          return;
-        }
-
-        const idRolUsuario = this.getIdRolUsuario(encontrado);
-        const usuarioNormalizado: Usuario = {
-          ...encontrado,
-          idRol: idRolUsuario
-        };
-
-        const completarLogin = (catalogoRoles: Rol[]) => {
-          this.roles = catalogoRoles;
-          const rolObj = catalogoRoles.find(
-            (r) => Number(this.getIdRolCatalogo(r)) === Number(idRolUsuario)
-          );
-
-          const sesion = this.auth.establecerSesionDesdeUsuario(
-            usuarioNormalizado,
-            rolObj?.nombre,
-            catalogoRoles
-          );
-          this.mensaje = `Bienvenido ${sesion.nombreCompleto} (${sesion.rolNombre})`;
-
-          if (this.auth.esAdmin()) {
-            this.listar();
-          }
-
-          this.router.navigate(['/panel']);
-        };
-
-        if (this.roles.length > 0) {
-          completarLogin(this.roles);
-        } else {
-          this.auth.obtenerRoles().subscribe({
-            next: (rolesCargados) => completarLogin(this.normalizarRoles(rolesCargados)),
-            error: () => completarLogin([])
-          });
-        }
-      },
-      error: () => {
-        this.error = 'No se pudo conectar con el servidor para validar el usuario.';
+      if (!encontrado) {
+        this.error = 'No existe un usuario registrado con ese correo.';
+        return;
       }
-    });
+
+      const estadoUsuario = (encontrado.estado || 'ACTIVO').toString().trim().toUpperCase();
+      if (estadoUsuario === 'INACTIVO') {
+        this.error = 'Este usuario se encuentra inactivo.';
+        return;
+      }
+
+      const passBackend = (encontrado as any).password ?? (encontrado as any).contrasena ?? '';
+      if (passBackend && String(passBackend) !== passIngresada) {
+        this.error = 'Contraseña incorrecta.';
+        return;
+      }
+
+      let catalogoRoles = this.roles;
+      if (!catalogoRoles.length) {
+        const rolesCargados = await firstValueFrom(this.auth.obtenerRoles());
+        catalogoRoles = this.normalizarRoles(rolesCargados);
+        this.roles = catalogoRoles;
+      }
+
+      const idRolUsuario = this.getIdRolUsuario(encontrado);
+      const usuarioNormalizado: Usuario = {
+        ...encontrado,
+        idRol: idRolUsuario
+      };
+
+      const rolObj = catalogoRoles.find(
+        (r) => Number(this.obtenerIdRolCatalogo(r)) === Number(idRolUsuario)
+      );
+
+      const sesion = this.auth.establecerSesionDesdeUsuario(
+        usuarioNormalizado,
+        rolObj?.nombre,
+        catalogoRoles
+      );
+
+      this.mensaje = `Bienvenido ${sesion.nombreCompleto} (${sesion.rolNombre})`;
+
+      if (this.auth.esAdmin()) {
+        await this.listar();
+      }
+
+      await this.router.navigate(['/panel']);
+    } catch {
+      this.error = 'No se pudo conectar con el servidor para validar el usuario.';
+    } finally {
+      this.cargando = false;
+      this.cdr.detectChanges();
+    }
   }
 
-  guardar(): void {
+  async guardar(): Promise<void> {
     this.mensaje = '';
     this.error = '';
 
+    const nombres = (this.form.nombres || '').trim();
+    const apellidos = (this.form.apellidos || '').trim();
+    const correo = (this.form.correo || '').trim();
+    const telefono = (this.form.telefono || '').trim();
+    const estado = ((this.form.estado || 'ACTIVO').trim() || 'ACTIVO').toUpperCase();
+    const idRolNum = Number(this.form.idRol);
+
+    if (!nombres || !apellidos || !correo || !telefono || !this.form.idRol || isNaN(idRolNum)) {
+      this.error = 'Completa todos los campos obligatorios y selecciona un rol.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    if (this.editandoId === null && !(this.form.password || '').trim()) {
+      this.error = 'Ingresa una contraseña para registrar el usuario.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     const payload: any = {
-      ...this.form,
-      idRol: Number(this.form.idRol),
-      id_rol: Number(this.form.idRol)
+      nombres,
+      apellidos,
+      correo,
+      telefono,
+      idRol: idRolNum,
+      id_rol: idRolNum,
+      rol: { idRol: idRolNum },
+      estado
     };
 
-    if (this.editandoId !== null && this.auth.esAdmin()) {
-      this.http.put<Usuario>(`${this.usuariosUrl}/${this.editandoId}`, payload).subscribe({
-        next: () => {
-          this.mensaje = 'Usuario actualizado correctamente.';
-          this.limpiar();
-          this.listar();
-        },
-        error: () => (this.error = 'Error al actualizar el usuario.')
-      });
-    } else {
-      this.http.post<Usuario>(this.usuariosUrl, payload).subscribe({
-        next: (creado) => {
-          this.mensaje = 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
-          this.limpiar();
-          if (this.auth.esAdmin()) {
-            this.listar();
-          }
-          if (creado?.correo) {
-            this.loginCorreo = creado.correo;
-            this.modo = 'login';
-          }
-        },
-        error: () => (this.error = 'Error al registrar el usuario.')
-      });
+    if ((this.form.password || '').trim()) {
+      payload.password = this.form.password;
+    }
+
+    this.cargando = true;
+    this.cdr.detectChanges();
+
+    try {
+      if (this.editandoId !== null && this.auth.esAdmin()) {
+        payload.idUsuario = Number(this.editandoId);
+        await firstValueFrom(this.http.put<Usuario>(`${this.usuariosUrl}/${this.editandoId}`, payload));
+        this.mensaje = 'Usuario actualizado correctamente.';
+        this.limpiar();
+        await this.listar();
+      } else {
+        const creado = await firstValueFrom(this.http.post<Usuario>(this.usuariosUrl, payload));
+        const correoRegistrado = creado?.correo || correo;
+        this.mensaje = 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
+        this.limpiar();
+        if (this.auth.esAdmin()) {
+          await this.listar();
+        }
+        this.loginCorreo = correoRegistrado;
+        this.loginPassword = '';
+        this.modo = 'login';
+      }
+    } catch (err: any) {
+      const detalle =
+        err?.error?.message ||
+        err?.error?.error ||
+        (typeof err?.error === 'string' ? err.error : '');
+      this.error =
+        this.editandoId !== null
+          ? `Error al actualizar el usuario.${detalle ? ' ' + detalle : ''}`
+          : `Error al registrar el usuario.${detalle ? ' ' + detalle : ''}`;
+    } finally {
+      this.cargando = false;
+      this.cdr.detectChanges();
     }
   }
 
   editar(u: Usuario): void {
     if (!this.auth.esAdmin()) return;
+    this.mensaje = '';
+    this.error = '';
     this.modo = 'gestion';
-    this.editandoId = u.idUsuario ?? (u as any).id_usuario ?? null;
+    this.editandoId = this.obtenerIdUsuario(u);
     this.form = {
-      ...u,
+      idUsuario: this.editandoId ?? undefined,
+      nombres: u.nombres || '',
+      apellidos: u.apellidos || '',
+      correo: u.correo || '',
+      telefono: u.telefono || '',
+      password: '',
       idRol: this.getIdRolUsuario(u),
-      password: ''
+      estado: (u.estado || 'ACTIVO').toUpperCase()
     };
+    this.cdr.detectChanges();
   }
 
-  eliminar(id: number): void {
+  async eliminar(id: number): Promise<void> {
     if (!this.auth.esAdmin()) return;
     this.mensaje = '';
     this.error = '';
-    this.http.delete<void>(`${this.usuariosUrl}/${id}`).subscribe({
-      next: () => {
-        this.mensaje = 'Usuario eliminado.';
-        this.listar();
-      },
-      error: () => (this.error = 'No se pudo eliminar el usuario.')
-    });
+    this.cargando = true;
+    this.cdr.detectChanges();
+
+    try {
+      await firstValueFrom(this.http.delete<void>(`${this.usuariosUrl}/${id}`));
+      if (this.editandoId !== null && Number(this.editandoId) === Number(id)) {
+        this.limpiar();
+      }
+      this.mensaje = 'Usuario eliminado correctamente.';
+      await this.listar();
+    } catch {
+      this.error = 'No se pudo eliminar el usuario.';
+    } finally {
+      this.cargando = false;
+      this.cdr.detectChanges();
+    }
   }
 
   limpiar(): void {
@@ -243,7 +347,7 @@ export class UsuarioComponent implements OnInit {
     this.form = this.nuevoForm();
     if (this.roles.length > 0) {
       const rolCliente = this.roles.find((r) => (r.nombre || '').toUpperCase() === 'CLIENTE');
-      this.form.idRol = rolCliente?.idRol ?? this.roles[0].idRol;
+      this.form.idRol = this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.roles[0]);
     }
   }
 
@@ -251,7 +355,7 @@ export class UsuarioComponent implements OnInit {
     if (u.rol?.nombre) return u.rol.nombre;
     const idRol = this.getIdRolUsuario(u);
     const encontrado = this.roles.find(
-      (r) => Number(this.getIdRolCatalogo(r)) === Number(idRol)
+      (r) => Number(this.obtenerIdRolCatalogo(r)) === Number(idRol)
     );
     if (encontrado?.nombre) return encontrado.nombre;
     return idRol !== undefined && idRol !== null ? `Rol #${idRol}` : 'Sin rol';

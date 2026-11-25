@@ -10,22 +10,27 @@
   <div class="tabs-modo">
     <button
       type="button"
-      (click)="modo = 'login'; mensaje = ''; error = ''"
+      [disabled]="cargando"
+      (click)="cambiarModo('login')"
       [class.activo]="modo === 'login'"
     >
       Iniciar Sesión
     </button>
+
     <button
       type="button"
-      (click)="modo = 'registro'; editandoId = null; mensaje = ''; error = ''"
+      [disabled]="cargando"
+      (click)="cambiarModo('registro')"
       [class.activo]="modo === 'registro'"
     >
       Registrar Usuario por Rol
     </button>
+
     <button
       *ngIf="auth.esAdmin()"
       type="button"
-      (click)="modo = 'gestion'; listar(); mensaje = ''; error = ''"
+      [disabled]="cargando"
+      (click)="cambiarModo('gestion')"
       [class.activo]="modo === 'gestion'"
     >
       Administrar Usuarios
@@ -39,8 +44,9 @@
   <form *ngIf="modo === 'login'" (ngSubmit)="iniciarSesion()" class="card-login" autocomplete="on">
     <h3>Ingreso al Sistema</h3>
     <div class="campo-vertical">
-      <label>Correo electrónico</label>
+      <label for="loginCorreo">Correo electrónico</label>
       <input
+        id="loginCorreo"
         type="email"
         [(ngModel)]="loginCorreo"
         name="loginCorreo"
@@ -50,8 +56,9 @@
       />
     </div>
     <div class="campo-vertical">
-      <label>Contraseña</label>
+      <label for="loginPassword">Contraseña</label>
       <input
+        id="loginPassword"
         type="password"
         [(ngModel)]="loginPassword"
         name="loginPassword"
@@ -60,10 +67,15 @@
         required
       />
     </div>
-    <button type="submit" class="btn-primario">Ingresar</button>
+    <div class="acciones-form">
+      <button type="submit" class="btn-primario" [disabled]="cargando">
+        {{ cargando ? 'Ingresando...' : 'Ingresar' }}
+      </button>
+      <button type="button" [disabled]="cargando" (click)="limpiarLogin()">Limpiar</button>
+    </div>
   </form>
 
-  <!-- VISTA REGISTRO (SIN TABLA EXPUESTA) -->
+  <!-- VISTA REGISTRO POR ROL (SIN TABLA EXPUESTA) -->
   <form *ngIf="modo === 'registro'" (ngSubmit)="guardar()" class="form-grid" autocomplete="off">
     <input
       type="text"
@@ -108,8 +120,8 @@
 
     <select [(ngModel)]="form.idRol" name="regIdRol" required>
       <option [ngValue]="undefined" disabled>Selecciona un rol</option>
-      <option *ngFor="let r of roles" [ngValue]="r.idRol">
-        {{ r.nombre }} ({{ r.descripcion }})
+      <option *ngFor="let r of roles" [ngValue]="obtenerIdRolCatalogo(r)">
+        {{ r.nombre }}<ng-container *ngIf="r.descripcion"> ({{ r.descripcion }})</ng-container>
       </option>
     </select>
 
@@ -123,8 +135,10 @@
     />
 
     <div class="acciones-form">
-      <button type="submit" class="btn-primario">Registrar Usuario</button>
-      <button type="button" (click)="limpiar()">Limpiar</button>
+      <button type="submit" class="btn-primario" [disabled]="cargando">
+        {{ cargando ? 'Registrando...' : 'Registrar Usuario' }}
+      </button>
+      <button type="button" [disabled]="cargando" (click)="limpiar()">Limpiar</button>
     </div>
   </form>
 
@@ -167,14 +181,14 @@
         type="password"
         [(ngModel)]="form.password"
         name="admPassword"
-        placeholder="Contraseña"
+        placeholder="Contraseña (dejar vacía para mantener)"
         autocomplete="new-password"
       />
 
       <select [(ngModel)]="form.idRol" name="admIdRol" required>
         <option [ngValue]="undefined" disabled>Selecciona un rol</option>
-        <option *ngFor="let r of roles" [ngValue]="r.idRol">
-          {{ r.nombre }} ({{ r.descripcion }})
+        <option *ngFor="let r of roles" [ngValue]="obtenerIdRolCatalogo(r)">
+          {{ r.nombre }}<ng-container *ngIf="r.descripcion"> ({{ r.descripcion }})</ng-container>
         </option>
       </select>
 
@@ -188,15 +202,17 @@
       />
 
       <div class="acciones-form">
-        <button type="submit" class="btn-primario">{{ editandoId ? 'Actualizar' : 'Crear' }}</button>
-        <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+        <button type="submit" class="btn-primario" [disabled]="cargando">
+          {{ cargando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Crear') }}
+        </button>
+        <button type="button" *ngIf="editandoId && !cargando" (click)="limpiar()">Cancelar</button>
+        <button type="button" *ngIf="!editandoId && !cargando" (click)="limpiar()">Limpiar</button>
       </div>
     </form>
 
     <table class="tabla-datos" *ngIf="usuarios.length > 0">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Nombres</th>
           <th>Apellidos</th>
           <th>Correo</th>
@@ -207,15 +223,19 @@
       </thead>
       <tbody>
         <tr *ngFor="let u of usuarios">
-          <td>{{ u.idUsuario || $any(u).id_usuario }}</td>
           <td>{{ u.nombres }}</td>
           <td>{{ u.apellidos }}</td>
           <td>{{ u.correo }}</td>
           <td>{{ obtenerNombreRol(u) }}</td>
           <td>{{ u.estado }}</td>
           <td class="acciones-tabla">
-            <button type="button" (click)="editar(u)">Editar</button>
-            <button type="button" *ngIf="u.idUsuario || $any(u).id_usuario" (click)="eliminar((u.idUsuario || $any(u).id_usuario)!)">
+            <button type="button" [disabled]="cargando" (click)="editar(u)">Editar</button>
+            <button
+              type="button"
+              *ngIf="obtenerIdUsuario(u) !== null"
+              [disabled]="cargando"
+              (click)="eliminar(obtenerIdUsuario(u)!)"
+            >
               Eliminar
             </button>
           </td>
@@ -223,4 +243,4 @@
       </tbody>
     </table>
   </div>
-</div> 
+</div>

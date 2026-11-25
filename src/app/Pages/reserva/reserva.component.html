@@ -49,8 +49,8 @@
       required
     />
 
-    <!-- Estado: automático al registrar, editable (3 estados) al actualizar -->
-    <ng-container *ngIf="editandoId; else estadoAutomatico">
+    <!-- Estado: automático al registrar, editable (3 estados) al actualizar (solo si puede editar) -->
+    <ng-container *ngIf="editandoId && auth.puedeEditarReserva(); else estadoAutomatico">
       <select [(ngModel)]="form.estado" name="estado" required>
         <option value="CONFIRMADO">CONFIRMADO</option>
         <option value="CANCELADO">CANCELADO</option>
@@ -100,7 +100,7 @@
 
     <div class="acciones-form">
       <button type="submit" [disabled]="guardando">
-        {{ guardando ? 'Guardando...' : (editandoId ? 'Actualizar Reserva' : 'Registrar Reserva') }}
+        {{ guardando ? 'Guardando...' : (editandoId && auth.puedeEditarReserva() ? 'Actualizar Reserva' : 'Registrar Reserva') }}
       </button>
       <button type="button" *ngIf="editandoId && !guardando" (click)="limpiar()">Cancelar</button>
     </div>
@@ -135,7 +135,7 @@
         <th>Servicio</th>
         <th>Pago</th>
         <th>Método</th>
-        <th>Acciones</th>
+        <th *ngIf="auth.puedeEditarReserva() || auth.puedeEliminarReserva()">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -187,11 +187,11 @@
             '-'
           }}
         </td>
-        <td class="acciones-tabla">
-          <button type="button" (click)="editar(r)">Editar</button>
+        <td class="acciones-tabla" *ngIf="auth.puedeEditarReserva() || auth.puedeEliminarReserva()">
+          <button type="button" *ngIf="auth.puedeEditarReserva()" (click)="editar(r)">Editar</button>
           <button
             type="button"
-            *ngIf="r.idReserva || r.id_reserva"
+            *ngIf="auth.puedeEliminarReserva() && (r.idReserva || r.id_reserva)"
             (click)="eliminar(r.idReserva || r.id_reserva)"
           >
             Eliminar
@@ -204,4 +204,4 @@
   <p *ngIf="mostrarLista && reservas.length > 0 && reservasFiltradas.length === 0">
     No se encontraron reservas para "{{ filtroCliente }}".
   </p>
-</div> 
+</div>
