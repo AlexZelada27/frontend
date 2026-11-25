@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { Usuario } from '../../models/usuario';
 import { Rol } from '../../models/rol';
 import { AuthService } from '../../services/auth.service';
@@ -30,6 +30,8 @@ export class UsuarioComponent implements OnInit {
 
   usuarios: Usuario[] = [];
   roles: Rol[] = [];
+  rolesActivos: Rol[] = [];
+  rolesDisponibles: Rol[] = [];
   editandoId: number | null = null;
   cargando = false;
   mensaje = '';
@@ -37,7 +39,7 @@ export class UsuarioComponent implements OnInit {
   form: Usuario = this.nuevoForm();
 
   ngOnInit(): void {
-    this.cargarInicial();
+    void this.cargarInicial();
   }
 
   private async cargarInicial(): Promise<void> {
@@ -58,6 +60,33 @@ export class UsuarioComponent implements OnInit {
       idRol: undefined,
       estado: 'ACTIVO'
     };
+  }
+
+  estaRolActivo(r: any): boolean {
+    const val = r?.estado;
+    if (typeof val === 'boolean') return val;
+    if (typeof val === 'number') return val === 1;
+    if (typeof val === 'string') {
+      const limpio = val.trim().toUpperCase();
+      return limpio === 'ACTIVO' || limpio === 'TRUE' || limpio === '1';
+    }
+    return Boolean(val);
+  }
+
+  private actualizarListasRoles(): void {
+    this.rolesActivos = (this.roles || []).filter((r) => this.estaRolActivo(r));
+
+    if (this.editandoId !== null && this.form.idRol !== undefined) {
+      const rolActual = (this.roles || []).find(
+        (r) => Number(this.obtenerIdRolCatalogo(r)) === Number(this.form.idRol)
+      );
+      if (rolActual && !this.estaRolActivo(rolActual)) {
+        this.rolesDisponibles = [rolActual, ...this.rolesActivos];
+        return;
+      }
+    }
+
+    this.rolesDisponibles = [...this.rolesActivos];
   }
 
   cambiarModo(nuevoModo: 'login' | 'registro' | 'gestion'): void {
@@ -123,15 +152,21 @@ export class UsuarioComponent implements OnInit {
 
   async cargarRoles(): Promise<void> {
     try {
-      const data = await firstValueFrom(this.auth.obtenerRoles());
+      const data = await firstValueFrom(this.auth.obtenerRoles().pipe(timeout(10000)));
       this.roles = this.normalizarRoles(data);
+      this.actualizarListasRoles();
 
-      if (this.roles.length > 0 && this.form.idRol === undefined) {
-        const rolCliente = this.roles.find((r) => (r.nombre || '').toUpperCase() === 'CLIENTE');
-        this.form.idRol = this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.roles[0]);
+      if (this.rolesActivos.length > 0 && this.form.idRol === undefined) {
+        const rolCliente = this.rolesActivos.find(
+          (r) => (r.nombre || '').toUpperCase() === 'CLIENTE'
+        );
+        this.form.idRol =
+          this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.rolesActivos[0]);
       }
     } catch {
       this.roles = [];
+      this.rolesActivos = [];
+      this.rolesDisponibles = [];
     }
   }
 
@@ -139,7 +174,9 @@ export class UsuarioComponent implements OnInit {
     if (!this.auth.esAdmin()) return;
     this.error = '';
     try {
-      const data = await firstValueFrom(this.auth.obtenerUsuariosRegistrados());
+      const data = await firstValueFrom(
+        this.auth.obtenerUsuariosRegistrados().pipe(timeout(10000))
+      );
       this.usuarios = Array.isArray(data) ? [...data] : [];
     } catch {
       this.error = 'No se pudieron cargar los usuarios registrados.';
@@ -165,7 +202,9 @@ export class UsuarioComponent implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      const lista = await firstValueFrom(this.auth.obtenerUsuariosRegistrados());
+      const lista = await firstValueFrom(
+        this.auth.obtenerUsuariosRegistrados().pipe(timeout(10000))
+      );
       const usuariosLista = lista || [];
       const encontrado = usuariosLista.find(
         (u) => (u.correo || '').trim().toLowerCase() === correoBuscado
@@ -190,9 +229,12 @@ export class UsuarioComponent implements OnInit {
 
       let catalogoRoles = this.roles;
       if (!catalogoRoles.length) {
-        const rolesCargados = await firstValueFrom(this.auth.obtenerRoles());
+        const rolesCargados = await firstValueFrom(
+          this.auth.obtenerRoles().pipe(timeout(10000))
+        );
         catalogoRoles = this.normalizarRoles(rolesCargados);
         this.roles = catalogoRoles;
+        this.actualizarListasRoles();
       }
 
       const idRolUsuario = this.getIdRolUsuario(encontrado);
@@ -214,7 +256,11 @@ export class UsuarioComponent implements OnInit {
       this.mensaje = `Bienvenido ${sesion.nombreCompleto} (${sesion.rolNombre})`;
 
       if (this.auth.esAdmin()) {
-        await this.listar();
+        try {
+          await this.listar();
+        } catch {
+          // no bloquear navegación si falla refrescar la lista
+        }
       }
 
       await this.router.navigate(['/panel']);
@@ -239,6 +285,15 @@ export class UsuarioComponent implements OnInit {
 
     if (!nombres || !apellidos || !correo || !telefono || !this.form.idRol || isNaN(idRolNum)) {
       this.error = 'Completa todos los campos obligatorios y selecciona un rol.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const rolElegido = (this.roles || []).find(
+      (r) => Number(this.obtenerIdRolCatalogo(r)) === idRolNum
+    );
+    if (rolElegido && !this.estaRolActivo(rolElegido) && this.editandoId === null) {
+      this.error = 'No se puede registrar un usuario con un rol inactivo.';
       this.cdr.detectChanges();
       return;
     }
@@ -270,17 +325,31 @@ export class UsuarioComponent implements OnInit {
     try {
       if (this.editandoId !== null && this.auth.esAdmin()) {
         payload.idUsuario = Number(this.editandoId);
-        await firstValueFrom(this.http.put<Usuario>(`${this.usuariosUrl}/${this.editandoId}`, payload));
+        await firstValueFrom(
+          this.http
+            .put<Usuario>(`${this.usuariosUrl}/${this.editandoId}`, payload)
+            .pipe(timeout(10000))
+        );
         this.mensaje = 'Usuario actualizado correctamente.';
         this.limpiar();
-        await this.listar();
+        try {
+          await this.listar();
+        } catch {
+          // evitar que un error al refrescar la lista deje el estado colgado
+        }
       } else {
-        const creado = await firstValueFrom(this.http.post<Usuario>(this.usuariosUrl, payload));
+        const creado = await firstValueFrom(
+          this.http.post<Usuario>(this.usuariosUrl, payload).pipe(timeout(10000))
+        );
         const correoRegistrado = creado?.correo || correo;
         this.mensaje = 'Usuario registrado correctamente. Ya puedes iniciar sesión.';
         this.limpiar();
         if (this.auth.esAdmin()) {
-          await this.listar();
+          try {
+            await this.listar();
+          } catch {
+            // evitar que un error al refrescar la lista deje el estado colgado
+          }
         }
         this.loginCorreo = correoRegistrado;
         this.loginPassword = '';
@@ -288,9 +357,11 @@ export class UsuarioComponent implements OnInit {
       }
     } catch (err: any) {
       const detalle =
-        err?.error?.message ||
-        err?.error?.error ||
-        (typeof err?.error === 'string' ? err.error : '');
+        err?.name === 'TimeoutError'
+          ? 'El servidor tardó demasiado en responder.'
+          : err?.error?.message ||
+            err?.error?.error ||
+            (typeof err?.error === 'string' ? err.error : '');
       this.error =
         this.editandoId !== null
           ? `Error al actualizar el usuario.${detalle ? ' ' + detalle : ''}`
@@ -317,6 +388,7 @@ export class UsuarioComponent implements OnInit {
       idRol: this.getIdRolUsuario(u),
       estado: (u.estado || 'ACTIVO').toUpperCase()
     };
+    this.actualizarListasRoles();
     this.cdr.detectChanges();
   }
 
@@ -328,7 +400,9 @@ export class UsuarioComponent implements OnInit {
     this.cdr.detectChanges();
 
     try {
-      await firstValueFrom(this.http.delete<void>(`${this.usuariosUrl}/${id}`));
+      await firstValueFrom(
+        this.http.delete<void>(`${this.usuariosUrl}/${id}`).pipe(timeout(10000))
+      );
       if (this.editandoId !== null && Number(this.editandoId) === Number(id)) {
         this.limpiar();
       }
@@ -345,9 +419,13 @@ export class UsuarioComponent implements OnInit {
   limpiar(): void {
     this.editandoId = null;
     this.form = this.nuevoForm();
-    if (this.roles.length > 0) {
-      const rolCliente = this.roles.find((r) => (r.nombre || '').toUpperCase() === 'CLIENTE');
-      this.form.idRol = this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.roles[0]);
+    this.actualizarListasRoles();
+    if (this.rolesActivos.length > 0) {
+      const rolCliente = this.rolesActivos.find(
+        (r) => (r.nombre || '').toUpperCase() === 'CLIENTE'
+      );
+      this.form.idRol =
+        this.obtenerIdRolCatalogo(rolCliente) ?? this.obtenerIdRolCatalogo(this.rolesActivos[0]);
     }
   }
 

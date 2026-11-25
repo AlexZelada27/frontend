@@ -1,8 +1,8 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <div>
-      <h2>ZoneStyle — Acceso de Usuarios</h2>
-      <p class="subtitulo">Inicia sesión con tu cuenta registrada o registra un nuevo usuario según su rol.</p>
+      <h2>Zone Style</h2>
+      <h2 class="sub-marca">Prod - Music</h2>
     </div>
     <a *ngIf="auth.sesion()" routerLink="/panel" class="link-panel">Ir al Panel →</a>
   </div>
@@ -120,7 +120,7 @@
 
     <select [(ngModel)]="form.idRol" name="regIdRol" required>
       <option [ngValue]="undefined" disabled>Selecciona un rol</option>
-      <option *ngFor="let r of roles" [ngValue]="obtenerIdRolCatalogo(r)">
+      <option *ngFor="let r of rolesActivos" [ngValue]="obtenerIdRolCatalogo(r)">
         {{ r.nombre }}<ng-container *ngIf="r.descripcion"> ({{ r.descripcion }})</ng-container>
       </option>
     </select>
@@ -187,7 +187,7 @@
 
       <select [(ngModel)]="form.idRol" name="admIdRol" required>
         <option [ngValue]="undefined" disabled>Selecciona un rol</option>
-        <option *ngFor="let r of roles" [ngValue]="obtenerIdRolCatalogo(r)">
+        <option *ngFor="let r of rolesDisponibles" [ngValue]="obtenerIdRolCatalogo(r)">
           {{ r.nombre }}<ng-container *ngIf="r.descripcion"> ({{ r.descripcion }})</ng-container>
         </option>
       </select>
@@ -243,4 +243,4 @@
       </tbody>
     </table>
   </div>
-</div>
+</div> 

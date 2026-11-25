@@ -9,12 +9,18 @@
 
   <form (ngSubmit)="guardar()" class="form-bloqueo">
     <div class="form-fila">
-      <input
-        type="date"
-        [(ngModel)]="form.fecha"
-        name="fecha"
-        required
-      />
+      <div class="campo-fecha-grupo">
+        <input
+          #fechaBloqueoInput
+          type="date"
+          [(ngModel)]="form.fecha"
+          name="fecha"
+          required
+        />
+        <button type="button" class="btn-calendario" (click)="fechaBloqueoInput.showPicker()">
+          Seleccionar
+        </button>
+      </div>
 
       <input
         type="text"

@@ -9,19 +9,25 @@
 
   <div class="barra-filtro">
     <label for="filtroFechaPago">Filtrar por fecha:</label>
-    <input
-      id="filtroFechaPago"
-      type="date"
-      [(ngModel)]="filtroFecha"
-      name="filtroFecha"
-    />
+    <div class="campo-fecha-grupo">
+      <input
+        #filtroFechaPagoInput
+        id="filtroFechaPago"
+        type="date"
+        [(ngModel)]="filtroFecha"
+        name="filtroFecha"
+      />
+      <button type="button" class="btn-calendario" (click)="filtroFechaPagoInput.showPicker()">
+        Seleccionar
+      </button>
+    </div>
     <button type="button" *ngIf="filtroFecha" (click)="filtroFecha = ''">
       Limpiar filtro
-    </button> 
+    </button>
     <span class="resumen-pagos" *ngIf="pagosFiltrados.length > 0">
       Total: S/ {{ calcularTotalFiltrado() }} ({{ pagosFiltrados.length }} pago(s))
     </span>
-  </div> 
+  </div>
 
   <table class="tabla-datos" *ngIf="pagosFiltrados.length > 0">
     <thead>

@@ -1,13 +1,8 @@
 <div class="layout-container">
   <header class="layout-header">
-    <div>
-      <h1>ZoneStyle — Panel de Control</h1>
-      <p *ngIf="auth.esAdmin()">Acceso completo de administrador a todos los módulos del sistema.</p>
-      <p *ngIf="auth.esEmpleado()">Acceso operativo a reservas, clientes, horarios fijos, bloqueos de fecha, pagos y salas de estudio.</p>
-      <p *ngIf="auth.esCliente()">Acceso de cliente: consulta tus reservas y registra nuevas reservas.</p>
-      <p *ngIf="!auth.esAdmin() && !auth.esEmpleado() && !auth.esCliente()">
-        Selecciona un módulo para gestionar el estudio y sus reservas.
-      </p>
+    <div class="marca-panel">
+      <span class="marca-titulo">Zone Style</span>
+      <span class="marca-sub">Prod - Music</span>
     </div>
 
     <div class="sesion-box">

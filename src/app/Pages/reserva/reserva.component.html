@@ -41,13 +41,19 @@
     </select>
 
     <!-- Fecha: solo fecha actual en adelante al registrar -->
-    <input
-      type="date"
-      [(ngModel)]="form.fechaReserva"
-      name="fechaReserva"
-      [min]="!editandoId ? obtenerFechaHoyLocal() : null"
-      required
-    />
+    <div class="campo-fecha-grupo">
+      <input
+        #fechaInput
+        type="date"
+        [(ngModel)]="form.fechaReserva"
+        name="fechaReserva"
+        [min]="!editandoId ? obtenerFechaHoyLocal() : null"
+        required
+      />
+      <button type="button" class="btn-calendario" (click)="fechaInput.showPicker()">
+        Seleccionar
+      </button>
+    </div>
 
     <!-- Estado: automático al registrar, editable (3 estados) al actualizar (solo si puede editar) -->
     <ng-container *ngIf="editandoId && auth.puedeEditarReserva(); else estadoAutomatico">
