@@ -1,51 +1,207 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Reservas</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
   <form (ngSubmit)="guardar()" class="form-grid">
-    <input type="number" [(ngModel)]="form.idCliente" name="idCliente" placeholder="ID Cliente" required min="1" />
-    <input type="number" [(ngModel)]="form.idEmpleado" name="idEmpleado" placeholder="ID Empleado" required min="1" />
-    <input type="number" [(ngModel)]="form.idHorarioFijo" name="idHorarioFijo" placeholder="ID Horario Fijo" required min="1" />
-    <input type="number" [(ngModel)]="form.idSala" name="idSala" placeholder="ID Sala" required min="1" />
-    <input type="date" [(ngModel)]="form.fechaReserva" name="fechaReserva" required />
-    <input type="text" [(ngModel)]="form.estado" name="estado" placeholder="Estado (CONFIRMADA, PENDIENTE...)" required />
-    <input type="text" [(ngModel)]="form.metodoPago" name="metodoPago" placeholder="Método de pago (EFECTIVO, YAPE...)" required />
-    <input type="text" [(ngModel)]="serviciosTexto" name="serviciosTexto" placeholder="IDs Servicios (ej. 1, 2)" />
+    <!-- Cliente -->
+    <select [(ngModel)]="form.idCliente" name="idCliente" required>
+      <option [ngValue]="null" disabled>Selecciona un cliente...</option>
+      <option *ngFor="let c of clientes" [ngValue]="c.idCliente ?? c.id_cliente">
+        {{ obtenerNombreCliente(c) }}
+      </option>
+    </select>
+
+    <!-- Empleado -->
+    <select [(ngModel)]="form.idEmpleado" name="idEmpleado" required>
+      <option [ngValue]="null" disabled>Selecciona un empleado...</option>
+      <option *ngFor="let e of empleados" [ngValue]="e.idEmpleado ?? e.id_empleado">
+        {{ obtenerNombreEmpleado(e) }}
+      </option>
+    </select>
+
+    <!-- Horario Fijo -->
+    <select [(ngModel)]="form.idHorarioFijo" name="idHorarioFijo" required>
+      <option [ngValue]="null" disabled>Selecciona un horario...</option>
+      <option *ngFor="let h of horariosFijos" [ngValue]="h.idHorarioFijo ?? h.id_horario_fijo">
+        {{ obtenerTextoHorario(h) }}
+      </option>
+    </select>
+
+    <!-- Sala -->
+    <select [(ngModel)]="form.idSala" name="idSala" required>
+      <option [ngValue]="null" disabled>Selecciona una sala...</option>
+      <option *ngFor="let s of salas" [ngValue]="s.idSala ?? s.id_sala">
+        {{ s.nombre || s.nombreSala || ('Sala #' + (s.idSala ?? s.id_sala)) }}
+      </option>
+    </select>
+
+    <!-- Fecha: solo fecha actual en adelante al registrar -->
+    <input
+      type="date"
+      [(ngModel)]="form.fechaReserva"
+      name="fechaReserva"
+      [min]="!editandoId ? obtenerFechaHoyLocal() : null"
+      required
+    />
+
+    <!-- Estado: automático al registrar, editable (3 estados) al actualizar -->
+    <ng-container *ngIf="editandoId; else estadoAutomatico">
+      <select [(ngModel)]="form.estado" name="estado" required>
+        <option value="CONFIRMADO">CONFIRMADO</option>
+        <option value="CANCELADO">CANCELADO</option>
+        <option value="COMPLETADO">COMPLETADO</option>
+      </select>
+    </ng-container>
+    <ng-template #estadoAutomatico>
+      <input
+        type="text"
+        [value]="resolverEstadoPorFecha(form.fechaReserva, 'CONFIRMADO')"
+        readonly
+        class="input-readonly"
+        title="Si ya pasó la fecha (y no está cancelada), sale COMPLETADO; si no, inicia CONFIRMADO"
+      />
+    </ng-template>
+
+    <!-- Método de pago -->
+    <select [(ngModel)]="form.metodoPago" name="metodoPago" required>
+      <option value="EFECTIVO">EFECTIVO</option>
+      <option value="YAPE">YAPE</option>
+      <option value="PLIN">PLIN</option>
+      <option value="TARJETA">TARJETA</option>
+      <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+    </select>
+
+    <!-- Selección múltiple de servicios (2, 3 o más) -->
+    <div class="servicios-box">
+      <div class="servicios-titulo">Selecciona uno o más servicios:</div>
+      <div class="servicios-lista">
+        <label *ngFor="let srv of servicios" class="servicio-item">
+          <input
+            type="checkbox"
+            [checked]="estaServicioSeleccionado(srv.idServicio ?? srv.id_servicio)"
+            (change)="toggleServicio(srv.idServicio ?? srv.id_servicio)"
+          />
+          <span>{{ srv.nombre }} (S/ {{ srv.precio ?? srv.costo ?? 0 }})</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="resumen-pago">
+      <strong>Total a pagar:</strong> S/ {{ calcularMontoTotal() }}
+      <small *ngIf="serviciosSeleccionados.length > 0">
+        ({{ serviciosSeleccionados.length }} servicio(s) seleccionado(s))
+      </small>
+    </div>
 
     <div class="acciones-form">
-      <button type="submit">{{ editandoId ? 'Actualizar Reserva' : 'Registrar Reserva' }}</button>
-      <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+      <button type="submit" [disabled]="guardando">
+        {{ guardando ? 'Guardando...' : (editandoId ? 'Actualizar Reserva' : 'Registrar Reserva') }}
+      </button>
+      <button type="button" *ngIf="editandoId && !guardando" (click)="limpiar()">Cancelar</button>
     </div>
   </form>
 
-  <table class="tabla-datos">
+  <div class="barra-lista">
+    <input
+      type="text"
+      [(ngModel)]="filtroCliente"
+      name="filtroCliente"
+      placeholder="Filtrar por cliente (nombre o ID)..."
+      class="input-filtro"
+    />
+
+    <button type="button" *ngIf="filtroCliente" (click)="filtroCliente = ''">
+      Limpiar filtro
+    </button>
+
+    <button type="button" (click)="alternarLista()">
+      {{ mostrarLista ? 'Ocultar lista' : 'Mostrar lista de reservas' }}
+    </button>
+  </div>
+
+  <table class="tabla-datos" *ngIf="mostrarLista && reservasFiltradas.length > 0">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Fecha</th>
+        <th>Horario</th>
         <th>Estado</th>
         <th>Cliente</th>
         <th>Sala</th>
+        <th>Servicio</th>
+        <th>Pago</th>
+        <th>Método</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let r of reservas">
-        <td>{{ r.idReserva }}</td>
-        <td>{{ r.fechaReserva }}</td>
-        <td>{{ r.estado }}</td>
-        <td>{{ r.cliente?.nombre ?? r.idCliente }}</td>
-        <td>{{ r.salaEstudio?.nombre ?? r.idSala }}</td>
+      <tr *ngFor="let r of reservasFiltradas">
+        <td>{{ r.fechaReserva || r.fecha_reserva }}</td>
+        <td>{{ obtenerHorarioReserva(r) }}</td>
+        <td>{{ obtenerEstadoReserva(r) }}</td>
+        <td>
+          {{
+            r.clienteNombre ||
+            r.nombreCliente ||
+            r.cliente?.nombre ||
+            ((r.cliente?.nombres || '') + ' ' + (r.cliente?.apellidos || '')).trim() ||
+            r.idCliente ||
+            r.id_cliente ||
+            '-'
+          }}
+        </td>
+        <td>
+          {{
+            r.salaNombre ||
+            r.nombreSala ||
+            r.sala?.nombre ||
+            r.salaEstudio?.nombre ||
+            r.idSala ||
+            r.id_sala ||
+            r.sala?.idSala ||
+            r.sala?.id_sala ||
+            '-'
+          }}
+        </td>
+        <td>{{ obtenerNombreServicios(r) }}</td>
+        <td>
+          {{
+            r.monto ??
+            r.pago?.monto ??
+            pagosMap[r.idPago ?? r.id_pago ?? r.pago?.idPago ?? r.pago?.id_pago ?? r.idReserva ?? r.id_reserva ?? -1]?.monto ??
+            0
+          }}
+        </td>
+        <td>
+          {{
+            r.metodoPago ||
+            r.metodo_pago ||
+            r.pago?.metodoPago ||
+            r.pago?.metodo_pago ||
+            pagosMap[r.idPago ?? r.id_pago ?? r.pago?.idPago ?? r.pago?.id_pago ?? r.idReserva ?? r.id_reserva ?? -1]?.metodoPago ||
+            pagosMap[r.idPago ?? r.id_pago ?? r.pago?.idPago ?? r.pago?.id_pago ?? r.idReserva ?? r.id_reserva ?? -1]?.metodo_pago ||
+            '-'
+          }}
+        </td>
         <td class="acciones-tabla">
           <button type="button" (click)="editar(r)">Editar</button>
-          <button type="button" *ngIf="r.idReserva" (click)="eliminar(r.idReserva)">Eliminar</button>
+          <button
+            type="button"
+            *ngIf="r.idReserva || r.id_reserva"
+            (click)="eliminar(r.idReserva || r.id_reserva)"
+          >
+            Eliminar
+          </button>
         </td>
       </tr>
     </tbody>
   </table>
-</div>
+
+  <p *ngIf="mostrarLista && reservas.length > 0 && reservasFiltradas.length === 0">
+    No se encontraron reservas para "{{ filtroCliente }}".
+  </p>
+</div> 

@@ -1,24 +1,55 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Clientes</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
-  <form (ngSubmit)="guardar()" class="form-fila">
-    <input type="text" [(ngModel)]="form.nombre" name="nombre" placeholder="Nombre" required />
-    <input type="text" [(ngModel)]="form.telefono" name="telefono" placeholder="Teléfono" required />
-    <input type="email" [(ngModel)]="form.correo" name="correo" placeholder="Correo" required />
-    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
-    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+  <div class="barra-filtro">
+    <input
+      type="text"
+      [(ngModel)]="filtroNombre"
+      name="filtroNombre"
+      placeholder="Filtrar por nombre..."
+    />
+    <button type="button" *ngIf="filtroNombre" (click)="filtroNombre = ''">
+      Limpiar filtro
+    </button>
+  </div>
+
+  <form *ngIf="editandoId !== null" (ngSubmit)="guardar()" class="form-fila">
+    <input
+      type="text"
+      [(ngModel)]="form.nombre"
+      name="nombre"
+      placeholder="Nombre"
+      required
+    />
+    <input
+      type="text"
+      [(ngModel)]="form.telefono"
+      name="telefono"
+      placeholder="Teléfono"
+      required
+    />
+    <input
+      type="email"
+      [(ngModel)]="form.correo"
+      name="correo"
+      placeholder="Correo"
+      required
+    />
+    <button type="submit" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Actualizar' }}
+    </button>
+    <button type="button" *ngIf="!guardando" (click)="limpiar()">Cancelar</button>
   </form>
 
-  <table class="tabla-datos">
+  <table class="tabla-datos" *ngIf="clientesFiltrados.length > 0">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Nombre</th>
         <th>Teléfono</th>
         <th>Correo</th>
@@ -26,16 +57,30 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let c of clientes">
-        <td>{{ c.idCliente }}</td>
+      <tr *ngFor="let c of clientesFiltrados">
         <td>{{ c.nombre }}</td>
         <td>{{ c.telefono }}</td>
         <td>{{ c.correo }}</td>
         <td class="acciones-tabla">
           <button type="button" (click)="editar(c)">Editar</button>
-          <button type="button" *ngIf="c.idCliente" (click)="eliminar(c.idCliente)">Eliminar</button>
+          <button
+            type="button"
+            *ngIf="c.idCliente"
+            [disabled]="guardando"
+            (click)="eliminar(c.idCliente)"
+          >
+            Eliminar
+          </button>
         </td>
       </tr>
     </tbody>
   </table>
+
+  <p *ngIf="clientes.length > 0 && clientesFiltrados.length === 0">
+    No se encontraron clientes con el nombre "{{ filtroNombre }}".
+  </p>
+
+  <p *ngIf="clientes.length === 0 && !error">
+    No hay clientes registrados.
+  </p>
 </div>

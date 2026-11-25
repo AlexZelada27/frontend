@@ -5,6 +5,14 @@
   font-family: Arial, sans-serif;
 }
 
+.layout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .layout-header h1 {
   margin: 0 0 0.25rem 0;
 }
@@ -12,6 +20,61 @@
 .layout-header p {
   margin: 0;
   color: #4b5563;
+}
+
+.sesion-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sesion-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+}
+
+.sesion-nombre {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #111827;
+}
+
+.sesion-rol {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.btn-acceso {
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  background-color: #111827;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-acceso:hover {
+  background-color: #1f2937;
+}
+
+.btn-cerrar {
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background-color: #dc2626;
+  color: #ffffff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cerrar:hover {
+  background-color: #b91c1c;
 }
 
 .grid-modulos {

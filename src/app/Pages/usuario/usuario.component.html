@@ -1,52 +1,226 @@
 <div class="modulo-container">
   <div class="modulo-header">
-    <h2>Gestión de Usuarios</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <div>
+      <h2>ZoneStyle — Acceso de Usuarios</h2>
+      <p class="subtitulo">Inicia sesión con tu cuenta registrada o registra un nuevo usuario según su rol.</p>
+    </div>
+    <a *ngIf="auth.sesion()" routerLink="/panel" class="link-panel">Ir al Panel →</a>
+  </div>
+
+  <div class="tabs-modo">
+    <button
+      type="button"
+      (click)="modo = 'login'; mensaje = ''; error = ''"
+      [class.activo]="modo === 'login'"
+    >
+      Iniciar Sesión
+    </button>
+    <button
+      type="button"
+      (click)="modo = 'registro'; editandoId = null; mensaje = ''; error = ''"
+      [class.activo]="modo === 'registro'"
+    >
+      Registrar Usuario por Rol
+    </button>
+    <button
+      *ngIf="auth.esAdmin()"
+      type="button"
+      (click)="modo = 'gestion'; listar(); mensaje = ''; error = ''"
+      [class.activo]="modo === 'gestion'"
+    >
+      Administrar Usuarios
+    </button>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
-  <form (ngSubmit)="guardar()" class="form-grid">
-    <input type="text" [(ngModel)]="form.nombres" name="nombres" placeholder="Nombres" required />
-    <input type="text" [(ngModel)]="form.apellidos" name="apellidos" placeholder="Apellidos" required />
-    <input type="email" [(ngModel)]="form.correo" name="correo" placeholder="Correo" required />
-    <input type="text" [(ngModel)]="form.telefono" name="telefono" placeholder="Teléfono" required />
-    <input type="password" [(ngModel)]="form.password" name="password" placeholder="Contraseña" />
-    <input type="number" [(ngModel)]="form.idRol" name="idRol" placeholder="ID Rol" />
-    <input type="text" [(ngModel)]="form.estado" name="estado" placeholder="Estado (ej. ACTIVO)" required />
+  <!-- VISTA LOGIN -->
+  <form *ngIf="modo === 'login'" (ngSubmit)="iniciarSesion()" class="card-login" autocomplete="on">
+    <h3>Ingreso al Sistema</h3>
+    <div class="campo-vertical">
+      <label>Correo electrónico</label>
+      <input
+        type="email"
+        [(ngModel)]="loginCorreo"
+        name="loginCorreo"
+        placeholder="ejemplo@zonestyle.com"
+        autocomplete="email"
+        required
+      />
+    </div>
+    <div class="campo-vertical">
+      <label>Contraseña</label>
+      <input
+        type="password"
+        [(ngModel)]="loginPassword"
+        name="loginPassword"
+        placeholder="Tu contraseña"
+        autocomplete="current-password"
+        required
+      />
+    </div>
+    <button type="submit" class="btn-primario">Ingresar</button>
+  </form>
+
+  <!-- VISTA REGISTRO (SIN TABLA EXPUESTA) -->
+  <form *ngIf="modo === 'registro'" (ngSubmit)="guardar()" class="form-grid" autocomplete="off">
+    <input
+      type="text"
+      [(ngModel)]="form.nombres"
+      name="regNombres"
+      placeholder="Nombres"
+      autocomplete="off"
+      required
+    />
+    <input
+      type="text"
+      [(ngModel)]="form.apellidos"
+      name="regApellidos"
+      placeholder="Apellidos"
+      autocomplete="off"
+      required
+    />
+    <input
+      type="email"
+      [(ngModel)]="form.correo"
+      name="regCorreo"
+      placeholder="Correo"
+      autocomplete="off"
+      required
+    />
+    <input
+      type="tel"
+      [(ngModel)]="form.telefono"
+      name="regTelefono"
+      placeholder="Teléfono"
+      autocomplete="off"
+      required
+    />
+    <input
+      type="password"
+      [(ngModel)]="form.password"
+      name="regPassword"
+      placeholder="Contraseña"
+      autocomplete="new-password"
+      required
+    />
+
+    <select [(ngModel)]="form.idRol" name="regIdRol" required>
+      <option [ngValue]="undefined" disabled>Selecciona un rol</option>
+      <option *ngFor="let r of roles" [ngValue]="r.idRol">
+        {{ r.nombre }} ({{ r.descripcion }})
+      </option>
+    </select>
+
+    <input
+      type="text"
+      [(ngModel)]="form.estado"
+      name="regEstado"
+      placeholder="Estado (ej. ACTIVO)"
+      autocomplete="off"
+      required
+    />
 
     <div class="acciones-form">
-      <button type="submit">{{ editandoId ? 'Actualizar' : 'Crear' }}</button>
-      <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+      <button type="submit" class="btn-primario">Registrar Usuario</button>
+      <button type="button" (click)="limpiar()">Limpiar</button>
     </div>
   </form>
 
-  <table class="tabla-datos">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nombres</th>
-        <th>Apellidos</th>
-        <th>Correo</th>
-        <th>Teléfono</th>
-        <th>Estado</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let u of usuarios">
-        <td>{{ u.idUsuario }}</td>
-        <td>{{ u.nombres }}</td>
-        <td>{{ u.apellidos }}</td>
-        <td>{{ u.correo }}</td>
-        <td>{{ u.telefono }}</td>
-        <td>{{ u.estado }}</td>
-        <td class="acciones-tabla">
-          <button type="button" (click)="editar(u)">Editar</button>
-          <button type="button" *ngIf="u.idUsuario" (click)="eliminar(u.idUsuario)">Eliminar</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+  <!-- VISTA GESTIÓN (SOLO PARA ADMIN AUTENTICADO) -->
+  <div *ngIf="modo === 'gestion' && auth.esAdmin()">
+    <form (ngSubmit)="guardar()" class="form-grid" autocomplete="off">
+      <input
+        type="text"
+        [(ngModel)]="form.nombres"
+        name="admNombres"
+        placeholder="Nombres"
+        autocomplete="off"
+        required
+      />
+      <input
+        type="text"
+        [(ngModel)]="form.apellidos"
+        name="admApellidos"
+        placeholder="Apellidos"
+        autocomplete="off"
+        required
+      />
+      <input
+        type="email"
+        [(ngModel)]="form.correo"
+        name="admCorreo"
+        placeholder="Correo"
+        autocomplete="off"
+        required
+      />
+      <input
+        type="tel"
+        [(ngModel)]="form.telefono"
+        name="admTelefono"
+        placeholder="Teléfono"
+        autocomplete="off"
+        required
+      />
+      <input
+        type="password"
+        [(ngModel)]="form.password"
+        name="admPassword"
+        placeholder="Contraseña"
+        autocomplete="new-password"
+      />
+
+      <select [(ngModel)]="form.idRol" name="admIdRol" required>
+        <option [ngValue]="undefined" disabled>Selecciona un rol</option>
+        <option *ngFor="let r of roles" [ngValue]="r.idRol">
+          {{ r.nombre }} ({{ r.descripcion }})
+        </option>
+      </select>
+
+      <input
+        type="text"
+        [(ngModel)]="form.estado"
+        name="admEstado"
+        placeholder="Estado (ej. ACTIVO)"
+        autocomplete="off"
+        required
+      />
+
+      <div class="acciones-form">
+        <button type="submit" class="btn-primario">{{ editandoId ? 'Actualizar' : 'Crear' }}</button>
+        <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+      </div>
+    </form>
+
+    <table class="tabla-datos" *ngIf="usuarios.length > 0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombres</th>
+          <th>Apellidos</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of usuarios">
+          <td>{{ u.idUsuario || $any(u).id_usuario }}</td>
+          <td>{{ u.nombres }}</td>
+          <td>{{ u.apellidos }}</td>
+          <td>{{ u.correo }}</td>
+          <td>{{ obtenerNombreRol(u) }}</td>
+          <td>{{ u.estado }}</td>
+          <td class="acciones-tabla">
+            <button type="button" (click)="editar(u)">Editar</button>
+            <button type="button" *ngIf="u.idUsuario || $any(u).id_usuario" (click)="eliminar((u.idUsuario || $any(u).id_usuario)!)">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div> 

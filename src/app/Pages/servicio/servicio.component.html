@@ -1,24 +1,62 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Servicios</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
   <form (ngSubmit)="guardar()" class="form-fila">
-    <input type="number" [(ngModel)]="form.idTipoServicio" name="idTipoServicio" placeholder="ID Tipo Servicio" required min="1" />
-    <input type="text" [(ngModel)]="form.nombre" name="nombre" placeholder="Nombre del servicio" required />
-    <input type="number" [(ngModel)]="form.precio" name="precio" placeholder="Precio" required min="0" step="0.01" />
-    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
-    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+    <input
+      type="text"
+      [(ngModel)]="form.nombre"
+      name="nombre"
+      placeholder="Nombre del servicio"
+      required
+    />
+
+    <ng-container *ngIf="tiposServicio.length > 0; else inputTipoFallback">
+      <select [(ngModel)]="form.idTipoServicio" name="idTipoServicio" required>
+        <option [ngValue]="null" disabled>Selecciona tipo de servicio...</option>
+        <option
+          *ngFor="let t of tiposServicio"
+          [ngValue]="t.idTipoServicio ?? t.id_tipo_servicio ?? t.id"
+        >
+          {{ t.nombre ?? t.nombreTipoServicio ?? t.descripcion }}
+        </option>
+      </select>
+    </ng-container>
+    <ng-template #inputTipoFallback>
+      <input
+        type="number"
+        [(ngModel)]="form.idTipoServicio"
+        name="idTipoServicio"
+        placeholder="ID Tipo Servicio"
+        required
+        min="1"
+      />
+    </ng-template>
+
+    <input
+      type="number"
+      [(ngModel)]="form.precio"
+      name="precio"
+      placeholder="Precio"
+      required
+      min="0.01"
+      step="0.01"
+    />
+
+    <button type="submit" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : (editandoId ? 'Actualizar' : 'Registrar') }}
+    </button>
+    <button type="button" *ngIf="editandoId && !guardando" (click)="limpiar()">Cancelar</button>
   </form>
 
   <table class="tabla-datos">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Nombre</th>
         <th>Tipo Servicio</th>
         <th>Precio</th>
@@ -27,13 +65,18 @@
     </thead>
     <tbody>
       <tr *ngFor="let s of servicios">
-        <td>{{ s.idServicio }}</td>
         <td>{{ s.nombre }}</td>
-        <td>{{ s.idTipoServicio ?? s.tipoServicio?.nombre ?? s.tipoServicio?.idTipoServicio }}</td>
-        <td>{{ s.precio }}</td>
+        <td>{{ obtenerNombreTipoServicio(s) }}</td>
+        <td>S/ {{ s.precio }}</td>
         <td class="acciones-tabla">
           <button type="button" (click)="editar(s)">Editar</button>
-          <button type="button" *ngIf="s.idServicio" (click)="eliminar(s.idServicio)">Eliminar</button>
+          <button
+            type="button"
+            *ngIf="s.idServicio"
+            (click)="eliminar(s.idServicio)"
+          >
+            Eliminar
+          </button>
         </td>
       </tr>
     </tbody>

@@ -1,7 +1,16 @@
 <div class="layout-container">
   <header class="layout-header">
-    <h1>ZoneStyle — Panel de Control</h1>
-    <p>Selecciona un módulo para gestionar el estudio y sus reservas.</p>
+    <div>
+      <h1>ZoneStyle — Panel de Control</h1>
+      <p>Selecciona un módulo para gestionar el estudio y sus reservas.</p>
+    </div>
+
+    <div class="sesion-box">
+      <span *ngIf="auth.sesion() as sesion" class="sesion-nombre">
+        {{ sesion.nombreCompleto }}
+      </span>
+      <button type="button" (click)="cerrarSesion()" class="btn-cerrar">Cerrar Sesión</button>
+    </div>
   </header>
 
   <section class="grid-modulos">

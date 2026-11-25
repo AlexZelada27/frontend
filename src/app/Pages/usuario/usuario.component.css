@@ -9,14 +9,90 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.subtitulo {
+  margin: 0.25rem 0 0 0;
+  color: #4b5563;
+  font-size: 0.92rem;
+}
+
+.link-panel {
+  text-decoration: none;
+  color: #111827;
+  font-weight: 600;
+}
+
+.tabs-modo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.tabs-modo button {
+  padding: 0.55rem 1rem;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.tabs-modo button.activo {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.card-login {
+  max-width: 420px;
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.card-login h3 {
+  margin: 0;
+}
+
+.campo-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.campo-vertical input {
+  padding: 0.55rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.btn-primario {
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .msg-ok {
   color: #15803d;
+  font-weight: 600;
 }
 
 .msg-error {
   color: #b91c1c;
+  font-weight: 600;
 }
 
 .form-grid {
@@ -27,10 +103,14 @@
   padding: 1rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
+  background: #ffffff;
 }
 
-.form-grid input {
+.form-grid input,
+.form-grid select {
   padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
 }
 
 .acciones-form,
@@ -43,6 +123,7 @@
 .tabla-datos {
   width: 100%;
   border-collapse: collapse;
+  background: #ffffff;
 }
 
 .tabla-datos th,

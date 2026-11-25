@@ -1,24 +1,55 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Empleados</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
-  <form (ngSubmit)="guardar()" class="form-fila">
-    <input type="text" [(ngModel)]="form.nombre" name="nombre" placeholder="Nombre" required />
-    <input type="text" [(ngModel)]="form.cargo" name="cargo" placeholder="Cargo" required />
-    <input type="email" [(ngModel)]="form.correo" name="correo" placeholder="Correo" required />
-    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
-    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
+  <div class="barra-filtro">
+    <input
+      type="text"
+      [(ngModel)]="filtroNombre"
+      name="filtroNombre"
+      placeholder="Filtrar por nombre..."
+    />
+    <button type="button" *ngIf="filtroNombre" (click)="filtroNombre = ''">
+      Limpiar filtro
+    </button>
+  </div>
+
+  <form *ngIf="editandoId !== null" (ngSubmit)="guardar()" class="form-fila">
+    <input
+      type="text"
+      [(ngModel)]="form.nombre"
+      name="nombre"
+      placeholder="Nombre"
+      required
+    />
+    <input
+      type="text"
+      [(ngModel)]="form.cargo"
+      name="cargo"
+      placeholder="Cargo"
+      required
+    />
+    <input
+      type="email"
+      [(ngModel)]="form.correo"
+      name="correo"
+      placeholder="Correo"
+      required
+    />
+    <button type="submit" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Actualizar' }}
+    </button>
+    <button type="button" *ngIf="!guardando" (click)="limpiar()">Cancelar</button>
   </form>
 
-  <table class="tabla-datos">
+  <table class="tabla-datos" *ngIf="empleadosFiltrados.length > 0">
     <thead>
       <tr>
-        <th>ID</th>
         <th>Nombre</th>
         <th>Cargo</th>
         <th>Correo</th>
@@ -26,16 +57,30 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let e of empleados">
-        <td>{{ e.idEmpleado }}</td>
+      <tr *ngFor="let e of empleadosFiltrados">
         <td>{{ e.nombre }}</td>
         <td>{{ e.cargo }}</td>
         <td>{{ e.correo }}</td>
         <td class="acciones-tabla">
           <button type="button" (click)="editar(e)">Editar</button>
-          <button type="button" *ngIf="e.idEmpleado" (click)="eliminar(e.idEmpleado)">Eliminar</button>
+          <button
+            type="button"
+            *ngIf="e.idEmpleado"
+            [disabled]="guardando"
+            (click)="eliminar(e.idEmpleado)"
+          >
+            Eliminar
+          </button>
         </td>
       </tr>
     </tbody>
   </table>
+
+  <p *ngIf="empleados.length > 0 && empleadosFiltrados.length === 0">
+    No se encontraron empleados con el nombre "{{ filtroNombre }}".
+  </p>
+
+  <p *ngIf="empleados.length === 0 && !error">
+    No hay empleados registrados.
+  </p>
 </div>

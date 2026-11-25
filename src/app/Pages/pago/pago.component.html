@@ -1,38 +1,50 @@
 <div class="modulo-container">
   <div class="modulo-header">
     <h2>Gestión de Pagos</h2>
-    <a routerLink="/">← Volver al panel</a>
+    <a routerLink="/panel">← Volver al panel</a>
   </div>
 
   <p *ngIf="mensaje" class="msg-ok">{{ mensaje }}</p>
   <p *ngIf="error" class="msg-error">{{ error }}</p>
 
-  <form (ngSubmit)="guardar()" class="form-fila">
-    <input type="number" [(ngModel)]="form.monto" name="monto" placeholder="Monto" required min="0" step="0.01" />
-    <input type="text" [(ngModel)]="form.metodoPago" name="metodoPago" placeholder="Método de pago (EFECTIVO, YAPE, TARJETA)" required />
-    <button type="submit">{{ editandoId ? 'Actualizar' : 'Registrar' }}</button>
-    <button type="button" *ngIf="editandoId" (click)="limpiar()">Cancelar</button>
-  </form>
+  <div class="barra-filtro">
+    <label for="filtroFechaPago">Filtrar por fecha:</label>
+    <input
+      id="filtroFechaPago"
+      type="date"
+      [(ngModel)]="filtroFecha"
+      name="filtroFecha"
+    />
+    <button type="button" *ngIf="filtroFecha" (click)="filtroFecha = ''">
+      Limpiar filtro
+    </button> 
+    <span class="resumen-pagos" *ngIf="pagosFiltrados.length > 0">
+      Total: S/ {{ calcularTotalFiltrado() }} ({{ pagosFiltrados.length }} pago(s))
+    </span>
+  </div> 
 
-  <table class="tabla-datos">
+  <table class="tabla-datos" *ngIf="pagosFiltrados.length > 0">
     <thead>
       <tr>
-        <th>ID</th>
+        <th>Fecha</th>
         <th>Monto</th>
         <th>Método de Pago</th>
-        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let p of pagos">
-        <td>{{ p.idPago }}</td>
-        <td>{{ p.monto }}</td>
-        <td>{{ p.metodoPago }}</td>
-        <td class="acciones-tabla">
-          <button type="button" (click)="editar(p)">Editar</button>
-          <button type="button" *ngIf="p.idPago" (click)="eliminar(p.idPago)">Eliminar</button>
-        </td>
+      <tr *ngFor="let p of pagosFiltrados">
+        <td>{{ obtenerFechaPago(p) }}</td>
+        <td>S/ {{ p.monto ?? 0 }}</td>
+        <td>{{ p.metodoPago ?? p.metodo_pago ?? '-' }}</td>
       </tr>
     </tbody>
   </table>
+
+  <p *ngIf="pagos.length > 0 && pagosFiltrados.length === 0">
+    No se encontraron pagos para la fecha {{ filtroFecha }}.
+  </p>
+
+  <p *ngIf="pagos.length === 0 && !error">
+    No hay pagos registrados todavía.
+  </p>
 </div>

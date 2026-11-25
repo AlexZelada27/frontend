@@ -13,7 +13,9 @@ import { RolComponent } from './Pages/rol/rol.component';
 import { TipoServicioComponent } from './Pages/tipo-servicio/tipo-servicio.component';
 
 export const routes: Routes = [
-  { path: '', component: LayoutComponent },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: 'login', component: UsuarioComponent },
+  { path: 'panel', component: LayoutComponent },
   { path: 'clientes', component: ClienteComponent },
   { path: 'empleados', component: EmpleadoComponent },
   { path: 'reservas', component: ReservaComponent },
@@ -25,5 +27,5 @@ export const routes: Routes = [
   { path: 'bloqueos', component: BloqueoFechaComponent },
   { path: 'roles', component: RolComponent },
   { path: 'tipos-servicio', component: TipoServicioComponent },
-  { path: '**', redirectTo: '' }
+  { path: '**', redirectTo: 'login' }
 ];
